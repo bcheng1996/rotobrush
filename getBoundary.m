@@ -1,4 +1,4 @@
-function [outWindows] = untitled(inWindows)
+function [outWindows] = untitled(inWindows,wSize)
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
 %%
