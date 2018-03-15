@@ -1,4 +1,4 @@
-function [outWindows] = untitled(inWindows,wSize)
+function [outWindows] = getBoundary(inWindows,wSize)
 %UNTITLED Summary of this function goes here
 %   Detailed explanation goes here
 %%
@@ -6,7 +6,7 @@ windows = inWindows;
 for k=1:size(windows,2)
 
     w_B = bwboundaries(windows{k}.Fg);
-    w_B = w_B{1};
+    w_B = cell2mat(w_B);
     w_B_edge = [];
     
     for i=1:size(w_B,1)
@@ -14,7 +14,14 @@ for k=1:size(windows,2)
             w_B_edge = [w_B_edge ; w_B(i,:)]; 
         end
     end
+    
+    edge = zeros([wSize+1 wSize+1]);
+    for i=1:size(w_B_edge)
+        edge(w_B_edge(i,1),w_B_edge(i,2)) = 1;
+    end
 
+    windows{k}.EdgeBoundary = edge;
+    
     [X,Y] = find(windows{k}.Fg == 1);
     [X2, Y2] = find(windows{k}.Bg == 1);
     
@@ -29,7 +36,7 @@ for k=1:size(windows,2)
         p1 = XY(i,:);
         p2 = [w_B_edge(:,1) w_B_edge(:,2)];  
         dist = pdist2(p2, p1, 'euclidean');
-        if min(dist) > 5
+        if min(dist) > 2
         XY_update = [XY_update ; p1];
         end
     end
@@ -41,7 +48,7 @@ for k=1:size(windows,2)
         p1 = XY2(i,:);
         p2 = [w_B_edge(:,1) w_B_edge(:,2)];  
         dist = pdist2(p2, p1, 'euclidean');
-        if min(dist) > 5
+        if min(dist) > 2
         XY2_update = [XY2_update; p1];
         end
     end

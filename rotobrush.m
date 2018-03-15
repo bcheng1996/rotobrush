@@ -26,8 +26,8 @@ for i=1:+20:size(B{1},1)
     %initialize a new window struct
     window = struct;
     
-    xCenter = [xCenter; B{1}(i,2)];
-    yCenter = [yCenter; B{1}(i,1)];
+    xCenter =  B{1}(i,2);
+    yCenter =  B{1}(i,1);
     window.Position = [xCenter yCenter];
     
     im = (img1(B{1}(i,1)-t:B{1}(i,1)+t,B{1}(i,2)-t:B{1}(i,2)+t,:));
@@ -48,48 +48,106 @@ hold off
 windows = getBoundary(windows,wSize);
 
 %% shows mask of first window 
-imshow(windows{1}.Image);
+i = 15;
+imshow(windows{i}.Image);
 hold on
-plot(windows{1}.FgMaskCord(:,2), windows{1}.FgMaskCord(:,1), '.' , 'Color' , 'r');
-plot(windows{1}.BgMaskCord(:,2), windows{1}.BgMaskCord(:,1), '.' , 'Color' , 'b');
+plot(windows{i}.FgMaskCord(:,2), windows{i}.FgMaskCord(:,1), '.' , 'Color' , 'r');
+plot(windows{i}.BgMaskCord(:,2), windows{i}.BgMaskCord(:,1), '.' , 'Color' , 'b');
 hold off
 
+%% Initialize Color and Shape Model
+
+windows = getColorModel(windows, wSize);
+
+%Get Color Confidence
+windows = getColorConfidence(windows,wSize);
+
+windows = getShapeModel(windows, wSize);
+
+%% Detect Transformation
+pts1 = detectSURFFeatures(rgb2gray(img1),'MetricThreshold',200);
+pts2 = detectSURFFeatures(rgb2gray(imageSet{2}),'MetricThreshold',200);
+[ft1,vpoints1] = extractFeatures(rgb2gray(img1), pts1);
+[ft2,vpoints2] = extractFeatures(rgb2gray(imageSet{2}),pts2);
+
+%% Show detected points
+imshow(img1);
+hold on
+plot(pts1.Location(:,1),pts1.Location(:,2),'.', 'Color', 'r');
+hold off
+
+idxpair = matchFeatures(ft1,ft2);
+matchedPoints1 = vpoints1(idxpair(:, 1), :);
+matchedPoints2 = vpoints2(idxpair(:, 2), :);
+
+myShowMatch(img1,imageSet{2}, matchedPoints1,matchedPoints2,'montage');
+%% Estimage Geometric Transform
+tform = estimateGeometricTransform(matchedPoints1.Location, ...
+    matchedPoints2.Location, 'affine');
+
+out = imwarp(img1,tform);
+
+opticFlow = opticalFlowHS();
+flow = estimateFlow(opticFlow, rgb2gray(out));
+
+out_windows = updateWindowLocation(windows,out,flow);
 %%
-K = rgb2lab(windows{5}.Image);
-L_ = K(:,:,1);
-a_ = K(:,:,2);
-b_ = K(:,:,3);
+corner1 = cornermetric(rgb2gray(img1));
+corner2 = cornermetric(rgb2gray(imageSet{2}));
 
-%I_ = mat2gray(windows{1}.Image);
-K_ = [reshape(L_,[31*31 1]) reshape(a_,[31*31 1]) reshape(b_,[31*31 1])];
+N_best = 200;
 
-L_fg = L_(windows{5}.FgMask==1);
-a_fg = a_(windows{5}.FgMask==1);
-b_fg = b_(windows{5}.FgMask==1);
-X_fg = [L_fg a_fg b_fg];
-
-L_bg = L_(windows{5}.BgMask==1);
-a_bg = a_(windows{5}.BgMask==1);
-b_bg = b_(windows{5}.BgMask==1);
-X_bg = [L_bg a_bg b_bg];
-
-
-
-
-
-
+[X Y] = apply_anms(corner1,N_best);
+ X = cell2mat(reshape(X,[N_best,1]));
+ Y = cell2mat(reshape(Y,[N_best,1]));
+ XY = cat(3,X,Y);
+ 
+[X Y] = apply_anms(corner2,N_best);
+ X = cell2mat(reshape(X,[N_best,1]));
+ Y = cell2mat(reshape(Y,[N_best,1]));
+ XY2 = cat(3,X,Y);
+ 
+ ANMSset = {};
+ ANMSset{1} = XY;
+ ANMSset{2} = XY2;
+ 
 %%
-options = statset('MaxIter',500);
-GMM_fg = fitgmdist(X_fg,3,'RegularizationValue',0.1, 'Options', options);
-GMM_bg = fitgmdist(X_bg,3,'RegularizationValue',0.1, 'Options', options);
 
-f = cdf(GMM_fg,K_);
-b = cdf(GMM_bg,K_);
-% 
-f_ = reshape(f, [wSize+1 wSize+1]);
-b_ = reshape(b, [wSize+1 wSize+1]);
+imshow(img1);
+hold on
+X = ANMSset{1}(:,1);
+Y = ANMSset{1}(:,2);
+plot(X,Y,'.', 'Color','r');
+hold off
 
-fb = f_ ./ (f_ + b_);
+FD = getFD(img1,XY);
+FD2 = getFD(imageSet{2},XY2);
+
+%% Match features using the respective feature descriptors
+sprintf('matching features')
+%middle = ceil(numSets/2);
+x_matches = [];
+y_matches = [];
+
+match = my_match_feature(FD,FD2);
+% seperate nx2 matrix in the ANMSset to respective X and Y vectors
+x_cor = ANMSset{1}(:,:,1);
+y_cor = ANMSset{1}(:,:,2);
+xx_cor = ANMSset{2}(:,:,1);
+yy_cor = ANMSset{2}(:,:,2);
+% calcuate the matching points where x1 -> x2 and y1 -> y2 
+x1 = x_cor(match~=-1);
+y1 = y_cor(match~=-1);
+x2 = xx_cor(match(match~=-1));
+y2 = yy_cor(match(match~=-1));
+x_matches{1} = [x1 x2];
+y_matches{2} = [y1 y2];
+
+%show match of second last and last image
+myShowMatch(imageSet{end-1},imageSet{end},[x1 y1],[x2 y2],'montage');
+%%
+tform = estimateGeometricTransform([x1 y1],[x2 y2],'similarity');
+
 
 end
 
