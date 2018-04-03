@@ -6,7 +6,7 @@ windows = inWindows;
 for i=1:size(windows,2)
     bw = windows{i}.EdgeBoundary;
     [D IDX] = bwdist(bw);
-    Wc = exp(-(D.^2)/(wSize/5)^2);
+    Wc = exp(-(D.^2)/(wSize/8)^2);
     Fs = 1 - Wc;
     windows{i}.ShapeModel = Fs;
 end

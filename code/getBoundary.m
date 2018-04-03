@@ -4,9 +4,10 @@ function [outWindows] = getBoundary(inWindows,wSize)
 %%
 windows = inWindows;
 for k=1:size(windows,2)
-
     w_B = bwboundaries(windows{k}.Fg);
     w_B = cell2mat(w_B);
+    
+    if (numel(w_B) ~= 0)
     w_B_edge = [];
     
     for i=1:size(w_B,1)
@@ -30,13 +31,14 @@ for k=1:size(windows,2)
     
     XY_update = [];
     XY2_update = [];
-  
+    
+    if(numel(w_B_edge > 0))
     %foreground mask
     for i=1:size(XY, 1)
         p1 = XY(i,:);
         p2 = [w_B_edge(:,1) w_B_edge(:,2)];  
         dist = pdist2(p2, p1, 'euclidean');
-        if min(dist) > 2
+        if min(dist) > 5
         XY_update = [XY_update ; p1];
         end
     end
@@ -48,7 +50,7 @@ for k=1:size(windows,2)
         p1 = XY2(i,:);
         p2 = [w_B_edge(:,1) w_B_edge(:,2)];  
         dist = pdist2(p2, p1, 'euclidean');
-        if min(dist) > 2
+        if min(dist) > 5
         XY2_update = [XY2_update; p1];
         end
     end
@@ -56,7 +58,8 @@ for k=1:size(windows,2)
     
     windows{k}.FgMask = getMask(XY_update, wSize+1);
     windows{k}.BgMask = getMask(XY2_update, wSize+1);
-   
+    end
+    end
 end
 outWindows = windows;
 end
