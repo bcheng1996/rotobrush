@@ -27,10 +27,20 @@ hold off
 
 for i=1:size(windows,2)
     window = windows{i};
-    X = ceil(window.Position(1)-(wSize/2));
-    Y = ceil(window.Position(2)-(wSize/2));
+    X = round(window.Position(1)-(wSize/2));
+    Y = round(window.Position(2)-(wSize/2));
     XX = X + wSize;
     YY = Y + wSize;
+    if(XX >= size(inImg,2))
+        XX = size(inImg,2)
+        X = XX -(wSize);
+       
+    end
+    
+    if(YY >= size(inImg,1))
+    YY = size(inImg,1);
+    Y = YY - wSize;
+    end
     Vx = flow.Vx;
     Vy = flow.Vy; 
     Vx = Vx(Y:YY,X:XX);
@@ -62,6 +72,13 @@ for i=1:numel(windows)
    pos = windows{i}.Position; 
    X = round(pos(1));
    Y = round(pos(2));
+    if(X + (wSize/2) >= size(inImg,2))
+        X = size(inImg,2) - (wSize/2);
+    end
+    
+    if(Y + (wSize/2) >= size(inImg,1))
+    Y = size(inImg,1) - (wSize/2);
+    end
    new_img = inImg(Y-t:Y+t,X-t:X+t,:);
    windows{i}.Image = new_img;
    

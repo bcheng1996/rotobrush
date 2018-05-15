@@ -22,13 +22,13 @@ pts2 = detectSURFFeatures(temp_img2,'MetricThreshold',200);
 
 %% Show detected points
 %imshow(img1);
-hold on
-%plot(pts1.Location(:,1),pts1.Location(:,2),'.', 'Color', 'r');
-hold off
-
-idxpair = matchFeatures(ft1,ft2);
-matchedPoints1 = vpoints1(idxpair(:, 1), :);
-matchedPoints2 = vpoints2(idxpair(:, 2), :);
+% hold on
+% %plot(pts1.Location(:,1),pts1.Location(:,2),'.', 'Color', 'r');
+% hold off
+% 
+ idxpair = matchFeatures(ft1,ft2);
+ matchedPoints1 = vpoints1(idxpair(:, 1), :);
+ matchedPoints2 = vpoints2(idxpair(:, 2), :);
 
 %myShowMatch(img1,img2, matchedPoints1,matchedPoints2,'montage');
 %% Estimage Geometric Transform
@@ -38,44 +38,44 @@ tform = estimateGeometricTransform(matchedPoints1.Location, ...
 rout = imref2d(size(img2));
 out = imwarp(img1,tform,'OutputView', rout);
 out_mask = imwarp(mask, tform,'OutputView', rout);
-opticFlow = opticalFlowFarneback('FilterSize', 5);
+opticFlow = opticalFlowFarneback();
 flow = estimateFlow(opticFlow, rgb2gray(out));
-imshow(out)
-hold on
-plot(flow);
-hold off
+% imshow(out)
+% hold on
+% plot(flow);
+% hold off
 flow = estimateFlow(opticFlow, rgb2gray(img2));
-imshow(img1)
-hold on
-quiver(flow.Vx, flow.Vy)
-for i=1:size(windows,2)
-    %plot the windows
-    pos = windows{i}.Position;
-    w = rectangle('Position', [pos(1) - (wSize/2), pos(2) - (wSize/2) wSize wSize],'EdgeColor', 'y');
-    plot(pos(1), pos(2),'.','Color', 'r');
-end
-hold off
+% imshow(img1)
+% hold on
+% quiver(flow.Vx, flow.Vy)
+% for i=1:size(windows,2)
+%     %plot the windows
+%     pos = windows{i}.Position;
+%     w = rectangle('Position', [pos(1) - (wSize/2), pos(2) - (wSize/2) wSize wSize],'EdgeColor', 'y');
+%     plot(pos(1), pos(2),'.','Color', 'r');
+% end
+% hold off
 out_windows = updateWindowLocation(windows,out,flow,out_mask,wSize,tform);
 
 
 %% Show the updated windows
-imshow(img2);
-
-hold on
-quiver(flow.Vx, flow.Vy)
-for i=1:size(out_windows,2)
-    %plot the windows
-    pos = out_windows{i}.Position;
-    w = rectangle('Position', [pos(1) - (wSize/2), pos(2) - (wSize/2) wSize wSize],'EdgeColor', 'y');
-    plot(pos(1), pos(2),'.','Color', 'r');
-end
-
-hold off
+% imshow(img2);
+% 
+% hold on
+% quiver(flow.Vx, flow.Vy)
+% for i=1:size(out_windows,2)
+%     %plot the windows
+%     pos = out_windows{i}.Position;
+%     w = rectangle('Position', [pos(1) - (wSize/2), pos(2) - (wSize/2) wSize wSize],'EdgeColor', 'y');
+%     plot(pos(1), pos(2),'.','Color', 'r');
+% end
+% 
+% hold off
 
 
 %% Update Color Model
 % update boundary first
-for i=1:3
+for i=1:1
 out_windows = updateBoundary(out_windows,out_mask,wSize);
 out_windows = getShapeModel(out_windows, wSize);    
 out_windows = updateColorModel(out_windows,inWindows,wSize);

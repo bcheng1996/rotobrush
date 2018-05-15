@@ -1,6 +1,6 @@
 %------------- INPUT FRAME SET HERE ------------
 
-frameSet = 'Frames5';
+frameSet = 'Frames3';
 
 %-----------------------------------------------
 
@@ -18,7 +18,7 @@ end
 %%
 rpoly = roipoly(imageSet{1});
 %%
-[windows] = initRoto(imageSet{1},imageSet{2},rpoly,50,20);
+[windows] = initRoto(imageSet{1},imageSet{2},rpoly,40,25);
 initWindows = windows;
 
 %%
@@ -26,11 +26,11 @@ maskSet = {};
 resSet = {};
 windowSet = {};
 mask = rpoly;
-wSize = 50;
+wSize = 40;
 windows = initWindows;
 %%
 
-for i=1:10
+for i=1:100
     [mask,outImg,windows] = updateRoto(windows,wSize,imageSet{i},imageSet{i+1},mask);
     maskSet{i} = mask;
     resSet{i} = outImg;
@@ -47,7 +47,7 @@ imshow(resSet{k});
 %% Save to output folder
 file_location = cd;
 file_location = fullfile(file_location, '/../output/');
-for n=1:numel(resSet)
+for n=1:50
     fname = fullfile(file_location, [frameSet '_' num2str(n)]);
     B = bwboundaries(maskSet{n});
     max = 0;
@@ -68,22 +68,40 @@ plot(X, Y,'-r');
 hold off
     saveas(gcf, fname, 'jpg');
 end
+%%
 
+workingDir = cd;
+mkdir(workingDir)
+mkdir(workingDir,'images')
 
+outputVideo = VideoWriter(fullfile(workingDir,'Frames3'));
+open(outputVideo);
 
+%%
+file_location = cd;
+file_location = fullfile(file_location, '/../output/');
+
+   imageNames = dir(fullfile(file_location,'Frames3_*.jpg')); 
+
+   for i=1:numel(imageNames)
+        img = imread(fullfile(file_location,['Frames3_' num2str(i) '.jpg']));
+        writeVideo(outputVideo,img)
+   end
+   
+close(outputVideo)
 %% testing area
 
 %plot windows
-k = 3;
+k = 50;
 
 imshow(imageSet{k+1})
 hold on
-%for i=1:size(windowSet{k},2)
+for i=1:size(windowSet{k},2)
     %plot the windows
-    pos = windowSet{k}{10}.Position;
+    pos = windowSet{k}{i}.Position;
     w = rectangle('Position', [pos(1) - wSize/2, pos(2) - wSize/2 wSize wSize],'EdgeColor', 'y');
     plot(pos(1), pos(2),'.','Color', 'r');
-%end
+end
 hold off
 
 
